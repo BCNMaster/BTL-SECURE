@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
-import { WalletIcon, ArrowRightLeft, History, Settings, Copy, ExternalLink, RefreshCcw } from 'lucide-react';
+import { WalletIcon, ArrowRightLeft, History, Settings, Copy, ExternalLink, RefreshCcw, Layers, PieChart, DollarSign, Bridge } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import NetworkManager from './NetworkManager';
+import TokenManager from './TokenManager';
+import ChainBridge from './ChainBridge';
+import PortfolioAnalytics from './PortfolioAnalytics';
+import PriceMonitor from './PriceMonitor';
+import TransactionConfirm from './TransactionConfirm';
 
 const WalletDashboard = () => {
   const [balance, setBalance] = useState('0.00');
   const [address, setAddress] = useState('0x742d35Cc6634C0532925a3b844Bc454e4438f44e');
   const [copyAlert, setCopyAlert] = useState(false);
+  const [activeTab, setActiveTab] = useState('portfolio'); // ['portfolio', 'swap', 'bridge', 'buy']
 
   const handleCopyAddress = () => {
     navigator.clipboard.writeText(address);
@@ -21,67 +28,116 @@ const WalletDashboard = () => {
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-3xl"></div>
 
       <div className="container mx-auto px-4 py-8 relative z-10">
-        {/* Main Content */}
         <div className="space-y-8">
-          {/* Balance Card */}
-          <div className="backdrop-blur-lg bg-white/5 p-8 rounded-2xl shadow-xl border border-white/10">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-blue-100">Wallet Balance</h2>
-              <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-                <RefreshCcw className="w-5 h-5 text-blue-400" />
-              </button>
-            </div>
-            <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-              ${balance} BTL
-            </div>
-          </div>
-
-          {/* Address Card */}
-          <div className="backdrop-blur-lg bg-white/5 p-6 rounded-2xl shadow-xl border border-white/10">
-            <h2 className="text-xl font-semibold text-blue-100 mb-4">Wallet Address</h2>
-            <div className="flex items-center space-x-2">
-              <div className="flex-1 bg-white/5 p-3 rounded-lg font-mono text-sm text-blue-200 overflow-hidden">
-                {address}
+          {/* Network Selection & Address */}
+          <div className="flex justify-between items-center">
+            <NetworkManager />
+            <div className="flex items-center space-x-2 backdrop-blur-lg bg-white/5 p-2 rounded-lg">
+              <div className="font-mono text-sm text-blue-200 truncate max-w-[120px]">
+                {address.substring(0, 6)}...{address.substring(address.length - 4)}
               </div>
               <button
                 onClick={handleCopyAddress}
-                className="p-3 hover:bg-white/5 rounded-lg transition-colors"
-                title="Copy address"
+                className="p-2 hover:bg-white/5 rounded-lg transition-colors"
               >
-                <Copy className="w-5 h-5 text-blue-400" />
-              </button>
-              <button
-                className="p-3 hover:bg-white/5 rounded-lg transition-colors"
-                title="View in explorer"
-              >
-                <ExternalLink className="w-5 h-5 text-blue-400" />
+                <Copy className="w-4 h-4 text-blue-400" />
               </button>
             </div>
-            {copyAlert && (
-              <Alert className="mt-4 bg-green-500/10 border-green-500/20">
-                <AlertDescription className="text-green-200">
-                  Address copied to clipboard
-                </AlertDescription>
-              </Alert>
-            )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-4">
-            <button className="group relative flex items-center justify-center space-x-4 p-6 rounded-xl bg-gradient-to-r from-blue-500/10 to-blue-600/10 hover:from-blue-500/20 hover:to-blue-600/20 border border-blue-500/20 transition-all duration-300">
-              <div className="absolute inset-0 rounded-xl bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <ArrowRightLeft className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform duration-300" />
-              <span className="text-xl font-semibold text-blue-100">Send/Receive</span>
+          {/* Main Navigation */}
+          <div className="flex space-x-4 overflow-x-auto pb-2">
+            <button
+              onClick={() => setActiveTab('portfolio')}
+              className={`px-6 py-3 rounded-lg transition-all duration-200 ${
+                activeTab === 'portfolio' 
+                ? 'bg-blue-500/20 text-blue-100' 
+                : 'hover:bg-white/5 text-gray-400'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <PieChart className="w-5 h-5" />
+                <span>Portfolio</span>
+              </div>
             </button>
+            <button
+              onClick={() => setActiveTab('swap')}
+              className={`px-6 py-3 rounded-lg transition-all duration-200 ${
+                activeTab === 'swap' 
+                ? 'bg-blue-500/20 text-blue-100' 
+                : 'hover:bg-white/5 text-gray-400'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <ArrowRightLeft className="w-5 h-5" />
+                <span>Swap</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('bridge')}
+              className={`px-6 py-3 rounded-lg transition-all duration-200 ${
+                activeTab === 'bridge' 
+                ? 'bg-blue-500/20 text-blue-100' 
+                : 'hover:bg-white/5 text-gray-400'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Layers className="w-5 h-5" />
+                <span>Bridge</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('buy')}
+              className={`px-6 py-3 rounded-lg transition-all duration-200 ${
+                activeTab === 'buy' 
+                ? 'bg-blue-500/20 text-blue-100' 
+                : 'hover:bg-white/5 text-gray-400'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <DollarSign className="w-5 h-5" />
+                <span>Buy</span>
+              </div>
+            </button>
+          </div>
 
-            <button className="group relative flex items-center justify-center space-x-4 p-6 rounded-xl bg-gradient-to-r from-purple-500/10 to-purple-600/10 hover:from-purple-500/20 hover:to-purple-600/20 border border-purple-500/20 transition-all duration-300">
-              <div className="absolute inset-0 rounded-xl bg-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <History className="w-6 h-6 text-purple-400 group-hover:scale-110 transition-transform duration-300" />
-              <span className="text-xl font-semibold text-purple-100">History</span>
-            </button>
+          {/* Content Area */}
+          <div className="backdrop-blur-lg bg-white/5 p-6 rounded-2xl shadow-xl border border-white/10">
+            {activeTab === 'portfolio' && (
+              <div className="space-y-6">
+                <PortfolioAnalytics />
+                <TokenManager />
+                <PriceMonitor />
+              </div>
+            )}
+
+            {activeTab === 'swap' && (
+              <div className="space-y-6">
+                <TokenManager mode="swap" />
+                <TransactionConfirm />
+              </div>
+            )}
+
+            {activeTab === 'bridge' && (
+              <ChainBridge />
+            )}
+
+            {activeTab === 'buy' && (
+              <div className="space-y-6">
+                <TokenManager mode="buy" />
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {copyAlert && (
+        <Alert className="fixed bottom-4 right-4 bg-green-500/10 border-green-500/20">
+          <AlertDescription className="text-green-200">
+            Address copied to clipboard
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 };

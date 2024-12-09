@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.bg-grid-pattern {
+  background-image: linear-gradient(to right, #1a237e 1px, transparent 1px),
+    linear-gradient(to bottom, #1a237e 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+body {
+  @apply bg-[#0A0F1E];
+}

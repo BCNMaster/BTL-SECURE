@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lock, KeyRound, AlertTriangle, Eye, EyeOff, RefreshCw, Shield, ChevronLeft } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -8,6 +8,18 @@ const WalletAuth = ({ onAuthComplete }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [mnemonic, setMnemonic] = useState('');
   const [error, setError] = useState('');
+  const [generatedMnemonic, setGeneratedMnemonic] = useState([]);
+
+  useEffect(() => {
+    if (step === 'backup') {
+      // In production, use a proper crypto library for mnemonic generation
+      const words = [
+        'margin', 'circle', 'balance', 'indoor', 'choice', 'scatter',
+        'matrix', 'second', 'battle', 'debate', 'escape', 'journey'
+      ];
+      setGeneratedMnemonic(words);
+    }
+  }, [step]);
 
   const handleCreateWallet = () => {
     if (password.length < 8) {
@@ -28,6 +40,14 @@ const WalletAuth = ({ onAuthComplete }) => {
       return;
     }
     setError('');
+    onAuthComplete();
+  };
+
+  const handleBackupComplete = () => {
+    localStorage.setItem('wallet', JSON.stringify({
+      mnemonic: generatedMnemonic,
+      createdAt: new Date().toISOString()
+    }));
     onAuthComplete();
   };
 
@@ -135,16 +155,16 @@ const WalletAuth = ({ onAuthComplete }) => {
 
           <div className="p-6 rounded-lg bg-gradient-to-r from-blue-500/5 to-purple-500/5 border border-white/10">
             <div className="grid grid-cols-3 gap-3">
-              {Array.from({ length: 12 }).map((_, i) => (
+              {generatedMnemonic.map((word, i) => (
                 <div key={i} className="p-3 text-sm text-blue-200 bg-white/5 rounded-lg border border-white/5">
-                  {i + 1}. Word {i + 1}
+                  {i + 1}. {word}
                 </div>
               ))}
             </div>
           </div>
 
           <button
-            onClick={onAuthComplete}
+            onClick={handleBackupComplete}
             className="w-full p-4 rounded-lg bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transition-all duration-300 text-white font-semibold shadow-lg shadow-green-500/25 hover:shadow-green-500/40"
           >
             I've Securely Saved My Recovery Phrase

@@ -23,10 +23,9 @@ export class FraudDetectionService {
   }
 
   private initializePatterns() {
-    // Common scam contract patterns
     this.suspiciousPatterns = [
-      /^0x0{20,}/, // Addresses with many leading zeros
-      /(.)\1{15,}/, // Repetitive patterns
+      /^0x0{20,}/,
+      /(.)\1{15,}/,
     ];
   }
 
@@ -37,24 +36,20 @@ export class FraudDetectionService {
       isHighRisk: false
     };
 
-    // Check recipient address
     const addressRisk = await this.checkAddress(transaction.to);
     risk.score += addressRisk.score;
     risk.reasons.push(...addressRisk.reasons);
 
-    // Check transaction amount
     if (this.isUnusualAmount(transaction.value)) {
       risk.score += 0.3;
       risk.reasons.push('Unusual transaction amount');
     }
 
-    // Check transaction timing
     if (this.isUnusualTiming(transaction.timestamp)) {
       risk.score += 0.2;
       risk.reasons.push('Unusual transaction timing');
     }
 
-    // Check for rapid successive transactions
     if (await this.hasRecentSimilarTransactions(transaction)) {
       risk.score += 0.4;
       risk.reasons.push('Multiple similar transactions detected');
@@ -65,7 +60,6 @@ export class FraudDetectionService {
   }
 
   async checkAddress(address: string): Promise<AddressRisk> {
-    // Check cache first
     const cached = this.addressRiskCache.get(address);
     if (cached && Date.now() - cached.lastChecked.getTime() < this.CACHE_DURATION) {
       return cached;
@@ -78,7 +72,6 @@ export class FraudDetectionService {
       lastChecked: new Date()
     };
 
-    // Check against known scam addresses
     if (this.knownScamAddresses.has(address)) {
       risk.score = 1;
       risk.isSuspicious = true;
@@ -87,7 +80,6 @@ export class FraudDetectionService {
       return risk;
     }
 
-    // Check address patterns
     for (const pattern of this.suspiciousPatterns) {
       if (pattern.test(address)) {
         risk.score += 0.4;
@@ -95,7 +87,6 @@ export class FraudDetectionService {
       }
     }
 
-    // Check contract verification status
     if (await this.isUnverifiedContract(address)) {
       risk.score += 0.3;
       risk.reasons.push('Unverified contract');
@@ -108,47 +99,33 @@ export class FraudDetectionService {
 
   private isUnusualAmount(amount: string): boolean {
     const value = parseFloat(amount);
-    // Check for round numbers or unusually large amounts
     return value >= 1000000 || Number.isInteger(Math.log10(value));
   }
 
   private isUnusualTiming(timestamp: number): boolean {
     const date = new Date(timestamp * 1000);
     const hour = date.getHours();
-    // Flag transactions during unusual hours (e.g., 2 AM - 4 AM)
     return hour >= 2 && hour <= 4;
   }
 
   private async hasRecentSimilarTransactions(transaction: any): Promise<boolean> {
-    // This would typically check recent transactions in your database
-    // For now, return false as a placeholder
     return false;
   }
 
   private async isUnverifiedContract(address: string): Promise<boolean> {
-    // This would typically check contract verification status on block explorers
-    // For now, return false as a placeholder
     return false;
   }
 
-  // Real-time monitoring methods
   monitorTransactions(callback: (risk: TransactionRisk) => void): void {
-    // This would typically set up real-time transaction monitoring
-    // Implementation depends on your blockchain interaction setup
+    // Real-time monitoring implementation
   }
 
   async addScamAddress(address: string): Promise<void> {
     this.knownScamAddresses.add(address);
-    // Clear cache for this address
     this.addressRiskCache.delete(address);
   }
 
-  async reportSuspiciousActivity(
-    address: string,
-    reason: string
-  ): Promise<void> {
-    // Log suspicious activity
+  async reportSuspiciousActivity(address: string, reason: string): Promise<void> {
     console.warn(`Suspicious activity reported for ${address}: ${reason}`);
-    // This would typically send alerts or notifications
   }
 }

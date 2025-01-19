@@ -4,6 +4,7 @@ import { SUPPORTED_NETWORKS } from '../config/ui.config';
 import { MarketDataService } from '../services/market';
 import { TokenService } from '../services/token';
 import { TransactionService } from '../services/transaction';
+import { WalletSecurity } from '../services/security';
 
 interface WalletContextType {
   state: WalletState;
@@ -124,6 +125,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     SUPPORTED_NETWORKS.ethereum.rpcUrl,
     SUPPORTED_NETWORKS.solana.rpcUrl
   );
+  const securityService = new WalletSecurity();
 
   useEffect(() => {
     if (state.isInitialized && !state.isLocked) {
@@ -135,14 +137,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   const initializeWallet = async (password: string) => {
     try {
-      // Initialize wallet logic here
+      const { addresses } = await securityService.generateWallet(password);
       dispatch({
         type: 'INITIALIZE',
         payload: {
-          addresses: {
-            ethereum: '0x...', // Generated address
-            solana: 'So...' // Generated address
-          }
+          addresses
         }
       });
     } catch (error) {
@@ -157,9 +156,15 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   const unlockWallet = async (password: string): Promise<boolean> => {
     try {
-      // Verify password and unlock wallet
-      dispatch({ type: 'UNLOCK' });
-      return true;
+      const encryptedPrivateKey = localStorage.getItem('encryptedPrivateKey');
+      if (!encryptedPrivateKey) {
+        throw new Error('No encrypted private key found');
+      }
+      const success = await securityService.verifyPassword(encryptedPrivateKey, password);
+      if (success) {
+        dispatch({ type: 'UNLOCK' });
+      }
+      return success;
     } catch (error) {
       console.error('Failed to unlock wallet:', error);
       return false;

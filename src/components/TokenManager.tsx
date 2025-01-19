@@ -1,10 +1,8 @@
-// src/components/TokenManager.tsx
-
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, AlertTriangle, Check, ExternalLink } from 'lucide-react';
+import { Plus, Search, AlertTriangle, Check, ExternalLink, Loader } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TokenService } from '../services/token';
 
-// Mock data for demonstration
 const defaultTokens = [
   {
     address: '0x1234...5678',
@@ -38,7 +36,7 @@ const defaultTokens = [
   }
 ];
 
-const TokenManager = ({ tokenService, onTokenSelect }) => {
+const TokenManager = ({ mode = 'portfolio', tokenService = new TokenService(), onTokenSelect }) => {
   const [tokens, setTokens] = useState(defaultTokens);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddToken, setShowAddToken] = useState(false);
@@ -53,7 +51,26 @@ const TokenManager = ({ tokenService, onTokenSelect }) => {
     decimals: 18
   });
 
-  // Filter tokens based on search query
+  useEffect(() => {
+    if (mode === 'swap' || mode === 'buy') {
+      // Fetch tokens for swap or buy mode
+      fetchTokens();
+    }
+  }, [mode]);
+
+  const fetchTokens = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const fetchedTokens = await tokenService.getTokenBalances('your-wallet-address', 'ethereum');
+      setTokens(fetchedTokens);
+    } catch (err) {
+      setError('Failed to fetch tokens');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredTokens = tokens.filter(token => 
     token.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     token.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -71,7 +88,6 @@ const TokenManager = ({ tokenService, onTokenSelect }) => {
   };
 
   const validateTokenAddress = async (address) => {
-    // In a real implementation, this would validate the token contract
     return address.length === 42 && address.startsWith('0x');
   };
 
@@ -80,17 +96,10 @@ const TokenManager = ({ tokenService, onTokenSelect }) => {
       setLoading(true);
       setError(null);
 
-      // Validate address
       const isValid = await validateTokenAddress(newToken.address);
       if (!isValid) {
         throw new Error('Invalid token address');
       }
-
-      // In a real implementation, we would:
-      // 1. Fetch token metadata from the contract
-      // 2. Verify the contract is a valid ERC20
-      // 3. Get token decimals and symbol
-      // 4. Get current balance
 
       const mockNewToken = {
         ...newToken,
@@ -206,46 +215,52 @@ const TokenManager = ({ tokenService, onTokenSelect }) => {
         </button>
       </div>
 
-      <div className="space-y-2">
-        {filteredTokens.map((token) => (
-          <div
-            key={token.address}
-            className="flex items-center justify-between p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition"
-          >
-            <div className="flex items-center space-x-4">
-              <img
-                src={token.logo}
-                alt={token.name}
-                className="w-10 h-10 rounded-full"
-              />
-              <div>
-                <div className="font-medium">{token.symbol}</div>
-                <div className="text-sm text-gray-400">{token.name}</div>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-6">
-              <div className="text-right">
-                <div className="font-medium">{token.balance}</div>
-                <div className="text-sm text-gray-400">
-                  ${(parseFloat(token.balance) * token.price).toFixed(2)}
+      {loading ? (
+        <div className="flex justify-center items-center py-8">
+          <Loader className="w-8 h-8 animate-spin" />
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filteredTokens.map((token) => (
+            <div
+              key={token.address}
+              className="flex items-center justify-between p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition"
+            >
+              <div className="flex items-center space-x-4">
+                <img
+                  src={token.logo}
+                  alt={token.name}
+                  className="w-10 h-10 rounded-full"
+                />
+                <div>
+                  <div className="font-medium">{token.symbol}</div>
+                  <div className="text-sm text-gray-400">{token.name}</div>
                 </div>
               </div>
 
-              <button
-                onClick={() => handleTokenToggle(token.symbol)}
-                className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                  selectedTokens.has(token.symbol)
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-600 hover:bg-gray-500'
-                }`}
-              >
-                <Check className="w-4 h-4" />
-              </button>
+              <div className="flex items-center space-x-6">
+                <div className="text-right">
+                  <div className="font-medium">{token.balance}</div>
+                  <div className="text-sm text-gray-400">
+                    ${(parseFloat(token.balance) * token.price).toFixed(2)}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleTokenToggle(token.symbol)}
+                  className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                    selectedTokens.has(token.symbol)
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-600 hover:bg-gray-500'
+                  }`}
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 

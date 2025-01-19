@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, KeyRound, AlertTriangle, Eye, EyeOff, RefreshCw, Shield, ChevronLeft } from 'lucide-react';
+import { Lock, KeyRound, AlertTriangle, Eye, EyeOff, RefreshCw, Shield, ChevronLeft, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { WalletSecurity } from '../services/security';
 
 const WalletAuth = ({ onAuthComplete }) => {
   const [step, setStep] = useState('welcome');
@@ -9,6 +10,9 @@ const WalletAuth = ({ onAuthComplete }) => {
   const [mnemonic, setMnemonic] = useState('');
   const [error, setError] = useState('');
   const [generatedMnemonic, setGeneratedMnemonic] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const securityService = new WalletSecurity();
 
   useEffect(() => {
     if (step === 'backup') {
@@ -21,16 +25,30 @@ const WalletAuth = ({ onAuthComplete }) => {
     }
   }, [step]);
 
-  const handleCreateWallet = () => {
+  const handleCreateWallet = async () => {
     if (password.length < 8) {
       setError('Password must be at least 8 characters long');
       return;
     }
     setError('');
-    setStep('backup');
+    setIsLoading(true);
+    try {
+      const { mnemonic, encryptedPrivateKey, addresses } = await securityService.generateWallet(password);
+      setGeneratedMnemonic(mnemonic.split(' '));
+      localStorage.setItem('wallet', JSON.stringify({
+        encryptedPrivateKey,
+        addresses,
+        createdAt: new Date().toISOString()
+      }));
+      setStep('backup');
+    } catch (error) {
+      setError('Failed to create wallet');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleImportWallet = () => {
+  const handleImportWallet = async () => {
     if (password.length < 8) {
       setError('Password must be at least 8 characters long');
       return;
@@ -40,14 +58,23 @@ const WalletAuth = ({ onAuthComplete }) => {
       return;
     }
     setError('');
-    onAuthComplete();
+    setIsLoading(true);
+    try {
+      const { encryptedPrivateKey, addresses } = await securityService.generateWallet(password);
+      localStorage.setItem('wallet', JSON.stringify({
+        encryptedPrivateKey,
+        addresses,
+        createdAt: new Date().toISOString()
+      }));
+      onAuthComplete();
+    } catch (error) {
+      setError('Failed to import wallet');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBackupComplete = () => {
-    localStorage.setItem('wallet', JSON.stringify({
-      mnemonic: generatedMnemonic,
-      createdAt: new Date().toISOString()
-    }));
     onAuthComplete();
   };
 
@@ -127,8 +154,16 @@ const WalletAuth = ({ onAuthComplete }) => {
             <button
               onClick={step === 'create' ? handleCreateWallet : handleImportWallet}
               className="w-full p-4 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all duration-300 text-white font-semibold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40"
+              disabled={isLoading}
             >
-              {step === 'create' ? 'Create Secure Wallet' : 'Import Wallet'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                step === 'create' ? 'Create Secure Wallet' : 'Import Wallet'
+              )}
             </button>
           </div>
         </div>

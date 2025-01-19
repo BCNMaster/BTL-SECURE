@@ -1,9 +1,10 @@
-// src/components/PortfolioAnalytics.tsx
-
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { PieChart, Pie, Cell } from 'recharts';
 import { ChevronDown, TrendingUp, TrendingDown, DollarSign, BarChart2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle, Loader } from 'lucide-react';
+import { MarketDataService } from '../services/market';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 const TIMEFRAMES = ['1D', '1W', '1M', '3M', '1Y', 'ALL'];
@@ -43,6 +44,10 @@ const PortfolioAnalytics = () => {
   const [timeframe, setTimeframe] = useState('1M');
   const [portfolioData, setPortfolioData] = useState(mockPortfolio);
   const [showAllTokens, setShowAllTokens] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const marketDataService = new MarketDataService();
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
@@ -68,6 +73,24 @@ const PortfolioAnalytics = () => {
     }[newTimeframe];
     setPortfolioData({ ...portfolioData, history: generateMockData(days) });
   };
+
+  const fetchPortfolioData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Fetch portfolio data from the market data service
+      const data = await marketDataService.getPortfolioData();
+      setPortfolioData(data);
+    } catch (err) {
+      setError('Failed to fetch portfolio data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPortfolioData();
+  }, []);
 
   const renderValueChart = () => (
     <div className="bg-gray-800 rounded-lg p-6">
@@ -214,8 +237,22 @@ const PortfolioAnalytics = () => {
 
   return (
     <div className="space-y-6">
-      {renderValueChart()}
-      {renderAllocation()}
+      {error && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      {loading ? (
+        <div className="flex justify-center items-center py-8">
+          <Loader className="w-8 h-8 animate-spin" />
+        </div>
+      ) : (
+        <>
+          {renderValueChart()}
+          {renderAllocation()}
+        </>
+      )}
     </div>
   );
 };

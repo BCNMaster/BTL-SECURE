@@ -4,6 +4,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { WalletSecurity as SecurityService } from '../services/security';
 
 interface SecurityState {
   isBiometricEnabled: boolean;
@@ -32,6 +33,8 @@ export const WalletSecurity: React.FC = () => {
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const securityService = new SecurityService();
 
   // Handle inactivity timeout
   useEffect(() => {
@@ -64,7 +67,7 @@ export const WalletSecurity: React.FC = () => {
     try {
       if (!state.isBiometricEnabled) {
         // Request biometric authentication
-        const isBiometricAvailable = await checkBiometricAvailability();
+        const isBiometricAvailable = await securityService.validateBiometric();
         if (!isBiometricAvailable) {
           setError('Biometric authentication is not available on this device');
           return;
@@ -114,29 +117,20 @@ export const WalletSecurity: React.FC = () => {
       }
 
       // Implement password change logic here
-      // await walletService.updatePassword(passwordForm.currentPassword, passwordForm.newPassword);
-
-      setSuccess('Password updated successfully');
-      setPasswordForm({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
-      setState(prev => ({ ...prev, isPasswordChangeModalOpen: false }));
+      const success = await securityService.verifyPassword(passwordForm.currentPassword, passwordForm.newPassword);
+      if (success) {
+        setSuccess('Password updated successfully');
+        setPasswordForm({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+        setState(prev => ({ ...prev, isPasswordChangeModalOpen: false }));
+      } else {
+        setError('Failed to update password');
+      }
     } catch (error) {
       setError('Failed to update password');
-    }
-  };
-
-  const checkBiometricAvailability = async (): Promise<boolean> => {
-    if (!window.PublicKeyCredential) {
-      return false;
-    }
-
-    try {
-      return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-    } catch (error) {
-      return false;
     }
   };
 

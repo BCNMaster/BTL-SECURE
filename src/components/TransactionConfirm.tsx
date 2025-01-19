@@ -1,5 +1,3 @@
-// src/components/TransactionConfirm.tsx
-
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, AlertTriangle, Loader } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';

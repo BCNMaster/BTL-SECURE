@@ -1,140 +1,52 @@
-'use client';
+import React from 'react';
 
-import { useEffect, useState } from 'react';
-import { TokenList } from '../components/TokenList';
-import { TransactionForm } from '../components/TransactionForm';
-import { WalletSecurity } from '../components/WalletSecurity';
-import { UnlockForm } from '../components/UnlockForm';
-import { WalletSecurity as SecurityService } from '../services/security';
-import { MarketDataService } from '../services/market';
-import { TokenService } from '../services/token';
-import { TransactionService } from '../services/transaction';
-
-export default function WalletPage() {
-  const [isLocked, setIsLocked] = useState(true);
-  const [balances, setBalances] = useState({});
-  const [tokens, setTokens] = useState([]);
-  const [selectedNetwork, setSelectedNetwork] = useState('ethereum');
-  
-  const securityService = new SecurityService();
-  const marketService = new MarketDataService();
-  const tokenService = new TokenService(
-    process.env.NEXT_PUBLIC_ETH_RPC_URL || '',
-    process.env.NEXT_PUBLIC_SOLANA_RPC_URL || ''
-  );
-
-  useEffect(() => {
-    // Check if wallet exists and is locked
-    checkWalletStatus();
-  }, []);
-
-  const checkWalletStatus = async () => {
-    // Implement checking for existing wallet and lock status
-    const hasWallet = localStorage.getItem('hasWallet');
-    if (!hasWallet) {
-      // Show create wallet flow
-      return;
-    }
-    // Wallet exists but is locked
-    setIsLocked(true);
-  };
-
-  const handleUnlock = async (password: string) => {
-    try {
-      const success = await securityService.verifyPassword('storedEncryptedKey', password);
-      if (success) {
-        setIsLocked(false);
-        await loadWalletData();
-      }
-      return success;
-    } catch (error) {
-      console.error('Failed to unlock wallet:', error);
-      return false;
-    }
-  };
-
-  const loadWalletData = async () => {
-    try {
-      // Load balances
-      const addresses = {
-        ethereum: 'your-eth-address',
-        solana: 'your-solana-address'
-      };
-      
-      const balances = await tokenService.getTokenBalances(
-        addresses[selectedNetwork],
-        selectedNetwork
-      );
-      setTokens(balances);
-
-      // Start price updates
-      balances.forEach(token => {
-        marketService.subscribeToPriceUpdates(token.symbol, (price) => {
-          setTokens(current =>
-            current.map(t =>
-              t.symbol === token.symbol ? { ...t, price } : t
-            )
-          );
-        });
-      });
-    } catch (error) {
-      console.error('Failed to load wallet data:', error);
-    }
-  };
-
-  if (isLocked) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-lg">
-          <h1 className="text-2xl font-bold text-center mb-6">Unlock Your Wallet</h1>
-          <UnlockForm onSuccess={() => setIsLocked(false)} />
-        </div>
-      </div>
-    );
-  }
-
+export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 gap-6">
-          {/* Header */}
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">Your Wallet</h1>
-            <select
-              value={selectedNetwork}
-              onChange={(e) => setSelectedNetwork(e.target.value)}
-              className="p-2 border rounded-lg"
-            >
-              <option value="ethereum">Ethereum</option>
-              <option value="solana">Solana</option>
-            </select>
+    <main className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
+      <div className="container mx-auto px-4 py-16">
+        <header className="text-center mb-16">
+          <h1 className="text-5xl font-bold mb-4">BTL Secure Wallet</h1>
+          <p className="text-xl text-gray-300">Advanced Cryptocurrency Wallet with Multi-Chain Support</p>
+        </header>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-semibold mb-4">Multi-Chain Support</h2>
+            <p className="text-gray-300">Manage assets across multiple blockchain networks from a single interface.</p>
           </div>
 
-          {/* Balance Section */}
-          <div className="bg-white rounded-lg p-6 shadow">
-            <h2 className="text-xl font-semibold mb-4">Total Balance</h2>
-            {/* Add balance display */}
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-semibold mb-4">Enhanced Security</h2>
+            <p className="text-gray-300">Advanced encryption and multi-factor authentication to protect your assets.</p>
           </div>
 
-          {/* Tokens List */}
-          <div className="bg-white rounded-lg p-6 shadow">
-            <h2 className="text-xl font-semibold mb-4">Your Assets</h2>
-            <TokenList tokens={tokens} />
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-semibold mb-4">Portfolio Analytics</h2>
+            <p className="text-gray-300">Track and analyze your portfolio performance across all chains.</p>
           </div>
 
-          {/* Transaction Form */}
-          <div className="bg-white rounded-lg p-6 shadow">
-            <h2 className="text-xl font-semibold mb-4">Send</h2>
-            <TransactionForm />
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-semibold mb-4">Cross-Chain Bridge</h2>
+            <p className="text-gray-300">Seamlessly transfer assets between different blockchain networks.</p>
           </div>
 
-          {/* Security Settings */}
-          <div className="bg-white rounded-lg p-6 shadow">
-            <h2 className="text-xl font-semibold mb-4">Security</h2>
-            <WalletSecurity />
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-semibold mb-4">Token Swaps</h2>
+            <p className="text-gray-300">Exchange tokens directly within the wallet interface.</p>
+          </div>
+
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-semibold mb-4">Price Monitoring</h2>
+            <p className="text-gray-300">Real-time price tracking and alerts for your assets.</p>
           </div>
         </div>
+
+        <div className="mt-16 text-center">
+          <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors">
+            Launch Wallet
+          </button>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

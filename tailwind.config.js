@@ -30,3 +30,5 @@ module.exports = {
   },
   plugins: [],
 }
+
+// Updated the content configuration to exclude node_modules to avoid performance issues

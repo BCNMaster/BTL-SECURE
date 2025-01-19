@@ -1,8 +1,7 @@
-// src/components/ChainBridge.tsx
-
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, AlertTriangle, Loader, ExternalLink, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import chainService from '../services/chainService';
 
 const networks = [
   {
@@ -69,12 +68,15 @@ const ChainBridge = () => {
       setLoading(true);
       setError(null);
 
-      // Mock bridge transaction
-      await new Promise(res => setTimeout(res, 2000));
+      const bridgeResult = await chainService.bridgeTokens(
+        sourceNetwork.id,
+        targetNetwork.id,
+        selectedToken.symbol,
+        amount
+      );
 
-      const txHash = '0x' + Math.random().toString(16).slice(2);
       const newTx = {
-        hash: txHash,
+        hash: bridgeResult.txHash,
         sourceNetwork,
         targetNetwork,
         token: selectedToken,

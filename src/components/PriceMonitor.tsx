@@ -1,69 +1,17 @@
-// src/components/PriceMonitor.tsx
-
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Fuel, RefreshCw } from 'lucide-react';
-
-// Mock data for demonstration
-const mockPrices = new Map([
-  ['BTL', {
-    price: 45.67,
-    change24h: 3.24,
-    lastUpdated: Date.now(),
-    source: 'bottleOracle'
-  }],
-  ['ETH', {
-    price: 3456.22,
-    change24h: -1.55,
-    lastUpdated: Date.now(),
-    source: 'chainlink'
-  }],
-  ['USDC', {
-    price: 1.00,
-    change24h: 0.01,
-    lastUpdated: Date.now(),
-    source: 'chainlink'
-  }]
-]);
-
-const mockGasPrices = new Map([
-  ['bottle-chain', {
-    instant: { toString: () => '50' },
-    fast: { toString: () => '40' },
-    standard: { toString: () => '30' },
-    slow: { toString: () => '20' },
-    lastUpdated: Date.now()
-  }],
-  ['ethereum', {
-    instant: { toString: () => '100' },
-    fast: { toString: () => '80' },
-    standard: { toString: () => '60' },
-    slow: { toString: () => '40' },
-    baseFee: { toString: () => '30' },
-    lastUpdated: Date.now()
-  }]
-]);
-
-// Mock services for demonstration
-const mockServices = {
-  priceFeedService: {
-    subscribeToUpdates: (callback) => () => {},
-    getAllPrices: () => mockPrices
-  },
-  gasService: {
-    subscribeToUpdates: (callback) => () => {},
-    getAllGasPrices: () => mockGasPrices,
-    formatGasPrice: (chainId, price) => `${price.toString()} Gwei`
-  }
-};
+import { TrendingUp, TrendingDown, Fuel, RefreshCw, AlertTriangle, Loader } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { MarketDataService } from '../services/market';
+import { GasService } from '../services/gas';
 
 const PriceMonitor = ({ 
-  priceFeedService = mockServices.priceFeedService, 
-  gasService = mockServices.gasService 
+  priceFeedService = MarketDataService.getInstance(), 
+  gasService = new GasService() 
 }) => {
-  const [prices, setPrices] = useState(mockPrices);
-  const [gasPrices, setGasPrices] = useState(mockGasPrices);
+  const [prices, setPrices] = useState(new Map());
+  const [gasPrices, setGasPrices] = useState(new Map());
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedChain, setSelectedChain] = useState('bottle-chain');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let priceUnsubscribe = () => {};
@@ -91,6 +39,7 @@ const PriceMonitor = ({
 
   const refreshData = async () => {
     setRefreshing(true);
+    setError(null);
     try {
       if (priceFeedService?.getAllPrices) {
         const currentPrices = priceFeedService.getAllPrices();
@@ -103,6 +52,7 @@ const PriceMonitor = ({
       }
     } catch (error) {
       console.error('Error refreshing data:', error);
+      setError('Failed to refresh data');
     } finally {
       setRefreshing(false);
     }
@@ -201,32 +151,46 @@ const PriceMonitor = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Market Data</h2>
-        <button
-          onClick={refreshData}
-          className={`p-2 rounded-lg hover:bg-gray-800 transition ${
-            refreshing ? 'animate-spin' : ''
-          }`}
-          disabled={refreshing}
-        >
-          <RefreshCw size={20} />
-        </button>
-      </div>
+      {error && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      {refreshing ? (
+        <div className="flex justify-center items-center py-8">
+          <Loader className="w-8 h-8 animate-spin" />
+        </div>
+      ) : (
+        <>
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold">Market Data</h2>
+            <button
+              onClick={refreshData}
+              className={`p-2 rounded-lg hover:bg-gray-800 transition ${
+                refreshing ? 'animate-spin' : ''
+              }`}
+              disabled={refreshing}
+            >
+              <RefreshCw size={20} />
+            </button>
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Array.from(prices.entries()).map(([symbol, priceData]) =>
-          renderPriceCard(symbol, priceData)
-        )}
-      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from(prices.entries()).map(([symbol, priceData]) =>
+              renderPriceCard(symbol, priceData)
+            )}
+          </div>
 
-      <h2 className="text-xl font-bold mt-8 mb-4">Gas Prices</h2>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Array.from(gasPrices.entries()).map(([chainId, gasData]) =>
-          renderGasCard(chainId, gasData)
-        )}
-      </div>
+          <h2 className="text-xl font-bold mt-8 mb-4">Gas Prices</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from(gasPrices.entries()).map(([chainId, gasData]) =>
+              renderGasCard(chainId, gasData)
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 };

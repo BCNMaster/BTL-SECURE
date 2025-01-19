@@ -1,5 +1,3 @@
-// src/services/chainService.ts
-
 import { ethers } from 'ethers';
 import { Connection, PublicKey, Transaction } from '@solana/web3.js';
 import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
@@ -212,6 +210,17 @@ class ChainService {
     );
 
     return transactions;
+  }
+
+  // Handle token bridging between different networks
+  async bridgeTokens(sourceNetwork: string, targetNetwork: string, tokenSymbol: string, amount: string) {
+    try {
+      // Implement token bridging logic here
+      console.log(`Bridging ${amount} ${tokenSymbol} from ${sourceNetwork} to ${targetNetwork}`);
+    } catch (error) {
+      console.error('Error bridging tokens:', error);
+      throw error;
+    }
   }
 }
 

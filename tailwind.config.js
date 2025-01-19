@@ -32,3 +32,5 @@ module.exports = {
 }
 
 // Updated the content configuration to exclude node_modules to avoid performance issues
+
+// Followed the recommendations provided in the Tailwind CSS documentation for the content configuration

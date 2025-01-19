@@ -1,3 +1,5 @@
+'use client';
+
 import { WalletProvider } from '../contexts/WalletProvider';
 
 export default function RootLayout({
